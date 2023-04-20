@@ -1,17 +1,37 @@
-from models.vote import Vote
-from models.petition import Petition
 import os
 
 from flask import Flask, jsonify, request
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 
+# from models.petition import Petition
+# from models.vote import Vote
+
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = f"postgresql://{os.environ['POSTGRES_USER']}:{os.environ['POSTGRES_PASSWORD']}@db:5432/{os.environ['POSTGRES_DB']}"
+# app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://discord_bot_user:your_password@db:5432/discord_bot_db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
+
+
+class Petition(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(100), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
+    end_date = db.Column(db.DateTime, nullable=False)
+    votes = db.relationship('Vote', backref='petition', lazy=True)
+
+
+class Vote(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.String(50), nullable=False)
+    petition_id = db.Column(db.Integer, db.ForeignKey(
+        'petition.id'), nullable=False)
+    vote_value = db.Column(db.Boolean, nullable=False)
+    timestamp = db.Column(db.DateTime, default=db.func.current_timestamp())
 
 
 @app.route('/petitions', methods=['POST'])
@@ -37,7 +57,7 @@ def get_open_petitions():
             "created_at": petition.created_at,
             "end_date": petition.end_date
         })
-    return jsonify(response)
+    return jsonify(response), 201
 
 
 @app.route('/petitions/past', methods=['GET'])
@@ -59,7 +79,7 @@ def get_past_petitions():
             "yes_votes": yes_votes,
             "no_votes": no_votes
         })
-    return jsonify(response)
+    return jsonify(response), 201
 
 
 @app.route('/petitions/<int:petition_id>/vote', methods=['POST'])
@@ -79,4 +99,4 @@ def vote_on_petition(petition_id):
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=5001)
