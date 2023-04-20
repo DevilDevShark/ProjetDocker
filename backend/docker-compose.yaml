@@ -11,12 +11,14 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - discord_bot_network
 
   api:
     build: ./api
     container_name: discord_bot_api
     ports:
-      - "5000:5000"
+      - "5001:5000"
     env_file: .env
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
@@ -24,6 +26,12 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
     depends_on:
       - db
+    networks:
+      - discord_bot_network
 
 volumes:
   postgres_data:
+
+
+networks:
+  discord_bot_network:
