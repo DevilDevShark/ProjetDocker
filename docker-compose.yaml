@@ -1,48 +1,55 @@
-version: '3.8'
+version: '3.9'
 
 services:
-  petition_db:
-    image: 'postgres:13'
-    environment:
-      POSTGRES_USER: petition_user
-      POSTGRES_PASSWORD: welcome@123
-      POSTGRES_DB: petition_db
-    volumes:
-      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
-      - pg_data:/var/lib/postgresql/data
-    ports:
-      - '5432:5432'
   petition_api:
+    container_name: petition_api
+    image: yannxy/bot_api:1.0.0
     build: ./api
-    networks:
-      - petition_network
-    environment:
-      DATABASE_URI: 'postgresql://petition_user:welcome@123@postgres/petition_db'
     ports:
-      - '5006:5000'
+      - '4000:4000'
+    environment:
+      - DB_URL=${DB_URL}
     depends_on:
       - petition_db
-  petition_bot:
-    build: ./bot
-    networks:
-      - petition_network
-    environment:
-      TOKEN: 'MTA5OTIzMDI1MTkyMzU0NjIwMg.GYceqz.1isHjZp1m97_J_-ipsvCBQ9VvGxq9Dy150j0zc'
-      API_URL: 'http://api:5006'
-    depends_on:
-      - petition_api
-  petition_front:
-    build: ./frontend/petition
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "curl",
+          "-f",
+          "http://localhost:4000/api/health"
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  petition_db:
+    container_name: petition_db
+    image: postgres:12
     ports:
-      - '4200:4200'
-    networks:
-      - petition_network
-    depends_on:
-      - petition_api
+      - '5432:5432'
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-U", "petition_user" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+      
+    petition_front:
+      build: ./frontend/petition
+      ports:
+        - '4200:4200'
+      networks:
+        - petition_network
+      depends_on:
+        - petition_api
 
 volumes:
-  pg_data:
-
-networks:
-  petition_network:
-    driver: bridge
+  pgdata: {}
