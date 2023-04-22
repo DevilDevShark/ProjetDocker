@@ -9,7 +9,7 @@ export class DataService {
 
   constructor(private http: HttpClient) {}
 
-  getData(): Observable<any> {
-    return this.http.get<any>('https://exemple.com/api/data');
+  getPetitions(): Observable<any> {
+    return this.http.get<any>('https://localhost:5001/petitions/');
   }
 }

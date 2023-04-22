@@ -1,5 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 
+import { DataService } from './../services/data.service';
+
 @Component({
   selector: 'app-result-petition',
   templateUrl: './result-petition.component.html',
@@ -7,9 +9,16 @@ import { Component, OnInit } from '@angular/core';
 })
 export class ResultPetitionComponent implements OnInit {
 
-  constructor() { }
+  items: any[] = [];
 
-  ngOnInit(): void {
+  constructor(private dataService: DataService) { }
+
+  ngOnInit() {
+    this.dataService.getPetitions()
+      .subscribe((petitions) => {
+        console.log(petitions);
+        this.items = petitions;
+      });
   }
 
 }
