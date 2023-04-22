@@ -1,8 +1,13 @@
-FROM python:latest
+FROM python:3.6-slim-buster
 
 WORKDIR /opt/app
+
 COPY requirements.txt .
+
 RUN pip install -r requirements.txt
+
 COPY . .
 
-CMD ["gunicorn", "-w", "4", "-b", "127.0.0.1:5001", "app:app"]
+EXPOSE 4000
+
+CMD ["flask", "run", "--host=0.0.0.0", "--port=4000"]] 
