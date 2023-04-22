@@ -28,6 +28,11 @@ class Vote(db.Model):
     vote = db.Column(db.String(5), nullable=False)
 
 
+@app.route('/health', methods=['GET'])
+def health_check():
+    return 'OK', 200
+
+
 @app.route('/petitions', methods=['GET'])
 def get_petitions():
     is_closed = request.args.get('closed', 'false').lower() == 'true'
