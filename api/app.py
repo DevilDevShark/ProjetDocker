@@ -17,16 +17,19 @@ CORS(app)
 class Petition(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(100), unique=True, nullable=False)
+    content = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
-    end_date = db.Column(db.DateTime, nullable=True)
+    duration = db.Column(db.DateTime, nullable=False)
     votes = db.relationship('Vote', backref='petition', lazy=True)
 
     def json(self):
         return {
             "id": self.id,
             "title": self.title,
+            "content": self.content,
             "created_at": self.created_at,
-            "end_date": self.end_date
+            "duration": self.duration,
+            "votes": self.votes
         }
 
 
@@ -58,7 +61,8 @@ def create_petition():
         title = data['title']
         if not title:
             return make_response(jsonify({'error': 'Invalid input'}), 400)
-        new_petition = Petition(title=title, end_date=data['end_date'])
+        new_petition = Petition(
+            title=title, content=data['content'], duration=data['duration'])
         db.session.add(new_petition)
         db.session.commit()
         return make_response(jsonify({'message': 'Petition created'}), 201)
@@ -69,14 +73,15 @@ def create_petition():
 @app.route('/api/petitions/open', methods=['GET'])
 def get_open_petitions():
     open_petitions = Petition.query.filter(
-        Petition.end_date >= db.func.current_timestamp()).all()
+        Petition.duration >= db.func.current_timestamp()).all()
     response = []
     for petition in open_petitions:
         response.append({
             "id": petition.id,
             "title": petition.title,
+            "content": petition.content,
             "created_at": petition.created_at,
-            "end_date": petition.end_date
+            "duration": petition.duration
         })
     return make_response(jsonify(response), 200)
 
@@ -84,7 +89,7 @@ def get_open_petitions():
 @app.route('/api/petitions/past', methods=['GET'])
 def get_past_petitions():
     past_petitions = Petition.query.filter(
-        Petition.end_date < db.func.current_timestamp()).all()
+        Petition.duration < db.func.current_timestamp()).all()
     response = []
     for petition in past_petitions:
         yes_votes = Vote.query.filter(
@@ -94,8 +99,9 @@ def get_past_petitions():
         response.append({
             "id": petition.id,
             "title": petition.title,
+            "content": petition.content,
             "created_at": petition.created_at,
-            "end_date": petition.end_date,
+            "duration": petition.end_date,
             "yes_votes": yes_votes,
             "no_votes": no_votes
         })
