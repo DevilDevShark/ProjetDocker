@@ -28,6 +28,15 @@ class Vote(db.Model):
     vote = db.Column(db.String(5), nullable=False)
 
 
+@app.route('/petitions', methods=['GET'])
+def get_petitions():
+    is_closed = request.args.get('closed', 'false').lower() == 'true'
+    petitions = Petition.query.filter_by(is_closed=is_closed).all()
+    result = [{'id': p.id, 'title': p.title, 'content': p.content}
+              for p in petitions]
+    return jsonify(result)
+
+
 @app.route('/petitions', methods=['POST'])
 def create_petition():
     title = request.json.get('title')
