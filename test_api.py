@@ -5,6 +5,9 @@ import requests
 
 base_url = "http://localhost:5001"
 
+
+
+
 # Test creating a new petition
 petition_data = {
     "title": "Test Petition",
@@ -22,8 +25,7 @@ print(f"Get open petitions response: {response.status_code}, {response.text}")
 response = requests.get(f"{base_url}/petitions/past")
 print(f"Get past petitions response: {response.status_code}, {response.text}")
 
-# Test voting on a petition
-petition_id = 1  # Change this to a valid petition ID
+petition_id = 1  
 vote_data = {
     "user_id": "test_user",
     "vote_value": True
