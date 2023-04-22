@@ -1,55 +1,24 @@
-<html>
-   <head>
-      <link rel="stylesheet" type="text/css" href="style.css"/>
-      <script type="text/javascript" src="index.js"></script>
-   </head>
-   <body>
-      <h1>Formulaire de pétition</h1>
-      <form name="myForm" action="/file.php" onsubmit="return validateForm()" method="post">
-         <table class="form-style">
-            <tr>
-               <td>
-                  <label>
-                     Titre <span class="required">*</span>
-                  </label>
-               </td>
-               <td>
-                  <input type="text" name="title" class="long"/>
-                  <span class="error" id="errorTitle"></span>
-               </td>
-            </tr>
-            <tr>
-                <td>
-                    <label>
-                        Expiration à <span class="required">*</span>
-                    </label>
-                 </td>
-               <td>
-                  <label>
-                    <input type="datetime-local" name="experation">
-                    <span class="error" id="errorExperation"></span>
-                  </label>
-               </td>
-            </tr>
-            <tr>
-               <td>
-                  <label>
-                     Contenue <span class="required">*</span>
-                  </label>
-               </td>
-               <td>
-                  <textarea name="desc" class="long field-textarea"></textarea>
-                  <span class="error" id="errorDesc"></span>
-               </td>
-            </tr>
-            <tr>
-               <td></td>
-               <td>
-                  <input type="submit" value="Envoyer">      
-                  <input type="reset" value="Réinitialiser"> 
-               </td>
-            </tr>
-         </table>
-      </form>
-   </body>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <link rel="stylesheet" href="styles.css">
+   <title>Petitions</title>
+</head>
+
+<body>
+   <h1>Petitions</h1>
+   <div id="open-petitions">
+      <h2>Open Petitions</h2>
+      <ul id="open-petitions-list"></ul>
+   </div>
+   <div id="past-petitions">
+      <h2>Past Petitions</h2>
+      <ul id="past-petitions-list"></ul>
+   </div>
+   <script src="app.js"></script>
+</body>
+
 </html>
