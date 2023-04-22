@@ -41,15 +41,15 @@ services:
       timeout: 10s
       retries: 5
       start_period: 30s
-      
-    petition_front:
-      build: ./frontend/petition
-      ports:
-        - '4200:4200'
-      networks:
-        - petition_network
-      depends_on:
-        - petition_api
+
+  petition_front:
+    build: ./frontend/petition
+    ports:
+      - '4200:4200'
+    networks:
+      - petition_network
+    depends_on:
+      - petition_api
 
 volumes:
   pgdata: {}
