@@ -1,0 +1,55 @@
+version: '3.9'
+
+services:
+  petition_api:
+    container_name: petition_api
+    image: yannxy/bot_api:1.0.0
+    build: ./api
+    ports:
+      - '4000:4000'
+    environment:
+      - DB_URL=${DB_URL}
+    depends_on:
+      - petition_db
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "curl",
+          "-f",
+          "http://localhost:4000/api/health"
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  petition_db:
+    container_name: petition_db
+    image: postgres:12
+    ports:
+      - '5432:5432'
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-U", "petition_user" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+      
+    petition_front:
+      build: ./frontend/petition
+      ports:
+        - '4200:4200'
+      networks:
+        - petition_network
+      depends_on:
+        - petition_api
+
+volumes:
+  pgdata: {}
