@@ -1,5 +1,9 @@
 
 <h1>Résultat de pétition</h1>
 <ul>
-  <li *ngFor="let item of items">{{ item }}</li>
+  <li *ngFor="let item of items">
+    <h3>{{ item.title }}</h3>
+    <p>Accord 👍 : {{ item.yes_votes }}</p>
+    <p>Pas d'accord : {{ item.no_votes }}</p>
+  </li>
 </ul>
