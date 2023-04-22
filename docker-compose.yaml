@@ -14,19 +14,35 @@ services:
       - '5432:5432'
   petition_api:
     build: ./api
+    networks:
+      - petition_network
     environment:
       DATABASE_URI: 'postgresql://petition_user:welcome@123@postgres/petition_db'
     ports:
-      - '5001:5000'
+      - '5006:5000'
     depends_on:
       - petition_db
   petition_bot:
     build: ./bot
+    networks:
+      - petition_network
     environment:
       TOKEN: 'MTA5OTIzMDI1MTkyMzU0NjIwMg.GYceqz.1isHjZp1m97_J_-ipsvCBQ9VvGxq9Dy150j0zc'
-      API_URL: 'http://api:5001'
+      API_URL: 'http://api:5006'
+    depends_on:
+      - petition_api
+  petition_front:
+    build: ./frontend/petition
+    ports:
+      - '4200:4200'
+    networks:
+      - petition_network
     depends_on:
       - petition_api
 
 volumes:
   pg_data:
+
+networks:
+  petition_network:
+    driver: bridge

@@ -1,0 +1,9 @@
+<h1>Formulaire de pétition</h1>
+<form [formGroup]="petitionForm">
+  <p>Titre: <input type="text" id="titre" name="titre" formControlName="titre">
+  </p>
+  <p>Description<input type="text" id="desc" name="desc" formControlName="desc">
+  </p>
+</form>
+<button type="button" (click)="setValue()">Send</button>
+<h1> {{desc}}</h1>
