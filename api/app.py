@@ -1,88 +1,124 @@
-from flask import Flask, jsonify, request
+from os import environ
+
+import psycopg2
+from flask import Flask, jsonify, make_response, request
 from flask_cors import CORS
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://petition_user:welcome@123@localhost/petition_db'
+app.config['SQLALCHEMY_DATABASE_URI'] = environ.get('DB_URL')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['CORS_HEADERS'] = 'Content-Type'
 
 db = SQLAlchemy(app)
-migrate = Migrate(app, db)
 CORS(app)
 
 
 class Petition(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(100), nullable=False)
-    content = db.Column(db.String(1000), nullable=False)
-    is_closed = db.Column(db.Boolean, default=False)
+    title = db.Column(db.String(100), unique=True, nullable=False)
+    created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
+    end_date = db.Column(db.DateTime, nullable=True)
+    votes = db.relationship('Vote', backref='petition', lazy=True)
+
+    def json(self):
+        return {
+            "id": self.id,
+            "title": self.title,
+            "created_at": self.created_at,
+            "end_date": self.end_date
+        }
 
 
 class Vote(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.String(50), nullable=False)
     petition_id = db.Column(db.Integer, db.ForeignKey(
         'petition.id'), nullable=False)
-    user_id = db.Column(db.String(50), nullable=False)
-    vote = db.Column(db.String(5), nullable=False)
+    vote_value = db.Column(db.Boolean, nullable=False)
+    timestamp = db.Column(db.DateTime, default=db.func.current_timestamp())
+
+    def json(self):
+        return {
+            "id": self.id,
+            "user_id": self.user_id,
+            "petition_id": self.petition_id,
+            "vote_value": self.vote_value,
+            "timestamp": self.timestamp
+        }
 
 
-@app.route('/petitions', methods=['GET'])
-def get_petitions():
-    is_closed = request.args.get('closed', 'false').lower() == 'true'
-    petitions = Petition.query.filter_by(is_closed=is_closed).all()
-    result = [{'id': p.id, 'title': p.title, 'content': p.content}
-              for p in petitions]
-    return jsonify(result)
+db.create_all()
 
 
-@app.route('/petitions', methods=['POST'])
+@app.route('/api/petitions', methods=['POST'])
 def create_petition():
-    title = request.json.get('title')
-    content = request.json.get('content')
-    # duration = request.json.get('duration')
+    try:
+        data = request.get_json()
+        title = data['title']
+        if not title:
+            return make_response(jsonify({'error': 'Invalid input'}), 400)
+        new_petition = Petition(title=title, end_date=data['end_date'])
+        db.session.add(new_petition)
+        db.session.commit()
+        return make_response(jsonify({'message': 'Petition created'}), 201)
+    except Exception as e:
+        return make_response(jsonify({'error': f'Error creating petition. {e}'}), 400)
 
-    if not title or not content:
-        return jsonify({'error': 'Invalid input'}), 400
 
-    petition = Petition(title=title, content=content)
-    db.session.add(petition)
-    db.session.commit()
-    return jsonify({'message': 'Petition created', 'petition_id': petition.id}), 201
+@app.route('/api/petitions/open', methods=['GET'])
+def get_open_petitions():
+    open_petitions = Petition.query.filter(
+        Petition.end_date >= db.func.current_timestamp()).all()
+    response = []
+    for petition in open_petitions:
+        response.append({
+            "id": petition.id,
+            "title": petition.title,
+            "created_at": petition.created_at,
+            "end_date": petition.end_date
+        })
+    return make_response(jsonify(response), 200)
 
 
-@app.route('/votes', methods=['POST'])
-def vote_petition():
-    petition_id = request.json.get('petition_id')
-    user_id = request.json.get('user_id')
-    vote = request.json.get('vote')
+@app.route('/api/petitions/past', methods=['GET'])
+def get_past_petitions():
+    past_petitions = Petition.query.filter(
+        Petition.end_date < db.func.current_timestamp()).all()
+    response = []
+    for petition in past_petitions:
+        yes_votes = Vote.query.filter(
+            Vote.petition_id == petition.id, Vote.vote_value == True).count()
+        no_votes = Vote.query.filter(
+            Vote.petition_id == petition.id, Vote.vote_value == False).count()
+        response.append({
+            "id": petition.id,
+            "title": petition.title,
+            "created_at": petition.created_at,
+            "end_date": petition.end_date,
+            "yes_votes": yes_votes,
+            "no_votes": no_votes
+        })
+    return make_response(jsonify(response), 200)
 
-    if not petition_id or not user_id or not vote or vote not in ('yes', 'no'):
-        return jsonify({'error': 'Invalid input'}), 400
 
-    petition = Petition.query.get(petition_id)
-
-    if not petition or petition.is_closed:
-        return jsonify({'error': 'Petition not found or closed'}), 404
-
-    new_vote = Vote(petition_id=petition_id, user_id=user_id, vote=vote)
+@app.route('/api/petitions/<int:petition_id>/vote', methods=['POST'])
+def vote_on_petition(petition_id):
+    data = request.get_json()
+    user_id = data['user_id']
+    vote_value = data['vote_value']
+    existing_vote = Vote.query.filter(
+        Vote.user_id == user_id, Vote.petition_id == petition_id).first()
+    if existing_vote:
+        return jsonify({"message": "User has already voted on this petition!"}), 400
+    new_vote = Vote(user_id=user_id, petition_id=petition_id,
+                    vote_value=vote_value)
     db.session.add(new_vote)
     db.session.commit()
-    return jsonify({'message': 'Vote recorded'}), 201
+
+    return make_response(jsonify({"message": "Vote added"}), 201)
 
 
-@app.route('/petitions/<int:petition_id>/close', methods=['PUT'])
-def close_petition(petition_id):
-    petition = Petition.query.get(petition_id)
-
-    if not petition:
-        return jsonify({'error': 'Petition not found'}), 404
-
-    petition.is_closed = True
-    db.session.commit()
-    return jsonify({'message': 'Petition closed'}), 200
-
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+@app.route('/api/health', methods=['GET'])
+def health_check():
+    return make_response(jsonify({'message': 'OK'}), 200)

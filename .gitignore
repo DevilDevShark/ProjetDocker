@@ -1,2 +1,1 @@
-./backend/api/venv/
-./backend/.env
+.env
