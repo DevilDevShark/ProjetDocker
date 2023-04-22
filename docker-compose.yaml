@@ -1,37 +1,32 @@
 version: '3.8'
 
 services:
-  db:
-    image: postgres:latest
-    container_name: discord_bot_db
-    env_file: .env
+  petition_db:
+    image: 'postgres:13'
     environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: petition_user
+      POSTGRES_PASSWORD: welcome@123
+      POSTGRES_DB: petition_db
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-    networks:
-      - discord_bot_network
-
-  api:
-    build: ./api
-    container_name: discord_bot_api
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - pg_data:/var/lib/postgresql/data
     ports:
-      - "5001:5000"
-    env_file: .env
+      - '5432:5432'
+  petition_api:
+    build: ./api
     environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
+      DATABASE_URI: 'postgresql://petition_user:welcome@123@postgres/petition_db'
+    ports:
+      - '5001:5000'
     depends_on:
-      - db
-    networks:
-      - discord_bot_network
+      - petition_db
+  petition_bot:
+    build: ./bot
+    environment:
+      TOKEN: 'MTA5OTIzMDI1MTkyMzU0NjIwMg.GYceqz.1isHjZp1m97_J_-ipsvCBQ9VvGxq9Dy150j0zc'
+      API_URL: 'http://api:5001'
+    depends_on:
+      - petition_api
 
 volumes:
-  postgres_data:
-
-
-networks:
-  discord_bot_network:
+  pg_data:
