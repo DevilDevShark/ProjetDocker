@@ -46,8 +46,6 @@ services:
     build: ./frontend/petition
     ports:
       - '4200:4200'
-    networks:
-      - petition_network
     depends_on:
       - petition_api
 
