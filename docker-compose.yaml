@@ -7,6 +7,8 @@ services:
     build: ./api
     ports:
       - '4000:4000'
+    networks:
+      - petition_network
     environment:
       - DB_URL=${DB_URL}
     depends_on:
@@ -29,6 +31,8 @@ services:
     image: postgres:12
     ports:
       - '5432:5432'
+    networks:
+      - petition_network
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
@@ -42,14 +46,18 @@ services:
       retries: 5
       start_period: 30s
       
-    petition_front:
-      build: ./frontend/petition
-      ports:
-        - '4200:4200'
-      networks:
-        - petition_network
-      depends_on:
-        - petition_api
+  petition_front:
+    build: ./frontend/petition
+    ports:
+      - '4200:4200'
+    networks:
+      - petition_network
+    depends_on:
+      - petition_api
+
+networks:
+  petition_network:
+    driver: bridge
 
 volumes:
   pgdata: {}
